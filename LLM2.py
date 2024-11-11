@@ -2,24 +2,60 @@ import json
 import random
 from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
 import torch
+import sys
 
 # Load the output.json file
-with open('output.json', 'r') as file:
+with open('output.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
 
 # Extract the necessary information for fine-tuning
-def extract_samples(data, num_samples=None):
+import random
+
+import random
+
+def generate_finetune_instructions(data, num_samples=None):
     if num_samples:
         data = random.sample(data, num_samples)
+
     samples = []
     for item in data:
-        instruction = f"Task: Detect if the following JavaScript code is vulnerable.\nCode:\n{item['code']}\nOutput should be 1 if vulnerable, 0 if not, and an explanation of why the code is vulnerable."
-        output = f"{item['is_vulnerable']} - {item['explanation']}"
+        # Aggregate all patches while ensuring each `vuln` is a dictionary
+        patches = "\n".join(
+            patch.get("content", "")
+            for vuln in item.get("vulnerabilities", [])
+            if isinstance(vuln, dict)  # Check if vuln is a dictionary
+            for patch in vuln.get("patches", [])
+            if isinstance(patch, dict)  # Check if patch is a dictionary
+        )
+
+        # Construct the task instruction with necessary fields
+        instruction = (
+            f"Task: Detect if the following JavaScript code is vulnerable.\n"
+            f"Code:\n{patches}\n"
+            f"Context: This code may contain known vulnerabilities. Please analyze and determine if it is vulnerable "
+            f"and provide an explanation if so.\n"
+            #f"Vulnerability Info:\n"
+            #f"- Summary: {item['summary']}\n"
+            #f"- Description: {item['description']}\n"
+            #f"- Severity: {item.get('severity', 'N/A')}\n"
+            f"Expected Output: 1 if vulnerable, 0 if not, and an explanation if it is vulnerable."
+        )
+
+        # Define the output based on vulnerability status and explanation
+        output = f"1 - {item['description']}"
+        
+        # Append each sample as a dictionary with instruction and output
         samples.append({"instruction": instruction, "output": output})
+
     return samples
 
+
+
+
 # Example usage with a specific number of samples
-samples = extract_samples(data, num_samples=100)
+samples = generate_finetune_instructions(data, num_samples=3)
+print(samples)
+sys.exit()
 
 # Prepare the dataset for fine-tuning
 class CustomDataset(torch.utils.data.Dataset):
