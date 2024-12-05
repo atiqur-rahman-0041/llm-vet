@@ -54,7 +54,7 @@ export async function fetchAdvisories(
       let linkHeader = response.headers.get('Link');
 
       if (!linkHeader) {
-        logInfo('Invalid link header. Stopping.');
+        logError('Invalid link header. Stopping.');
         break;
       }
 
@@ -65,7 +65,7 @@ export async function fetchAdvisories(
 
       counter += 1;
 
-      if (counter === 5) {
+      if (counter === 1) {
         break;
       }
 
@@ -90,6 +90,12 @@ export async function getPatches(
   patchedTag,
   version = true,
 ) {
+  if (!repoPath || !vulnerableTag || !patchedTag) {
+    logError(
+      `Invalid input parameters for getPatches with values:, ${repoPath}, ${vulnerableTag}, ${patchedTag}`,
+    );
+    return {};
+  }
   let url = `https://api.github.com/repos/${repoPath}/compare/v${vulnerableTag}...v${patchedTag}`;
 
   if (!version) {
@@ -108,9 +114,6 @@ export async function getPatches(
     let data = await response.json();
 
     if (!response.ok && version) {
-      logInfo(
-        `Failed to fetch patch changes for ${repoPath} from v${vulnerableTag} to v${patchedTag}. Switching to non-version tags.`,
-      );
       return await getPatches(repoPath, vulnerableTag, patchedTag, false);
     } else if (!response.ok && !version) {
       throw new Error(data.message);

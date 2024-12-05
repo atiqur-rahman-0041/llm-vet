@@ -1,6 +1,6 @@
 import process from 'process';
 import fetch from 'node-fetch';
-import { logInfo } from './logger.js';
+import { logInfo, logError } from './logger.js';
 import 'dotenv/config';
 
 export async function getCveDescription(cveId) {
@@ -27,7 +27,7 @@ export async function getCveDescription(cveId) {
     );
     return '';
   } catch (error) {
-    logInfo(
+    logError(
       `Failed to fetch CVE description for ${cveId}. Returning empty string. Details:`,
       error.message,
     );

@@ -18,7 +18,7 @@ async function getPackageVersions(packageName) {
       `Failed to fetch versions for ${packageName}. Details:`,
       error.message,
     );
-    throw error;
+    return [];
   }
 }
 
@@ -60,5 +60,8 @@ export async function getVulnerablePackageVersion(
     }
   }
 
+  logError(
+    `Failed to find vulnerable version for ${packageName} in range ${vulnerableVersionRange} and first patched version ${firstPatchedVersion}`,
+  );
   return null;
 }
